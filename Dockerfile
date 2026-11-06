@@ -21,7 +21,6 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Copy application source
 COPY app.py imageencryptor.py truenas_api.py init.sh ./
 COPY templates/ ./templates/
-COPY static/ ./static/
 
 RUN mkdir -p /app/static/uploads
 
