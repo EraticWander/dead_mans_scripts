@@ -61,3 +61,16 @@ python app.py
 The web interface will be available at `http://localhost:5000`:
 - `GET /` & `POST /`: Encrypt and hide a message inside an uploaded image.
 - `GET /decrypt` & `POST /decrypt`: Extract and decrypt a hidden message from an uploaded PNG.
+
+---
+
+## Credits, Acknowledgments & External Sources
+
+- **[`cryptosteganography`](https://github.com/computationalcore/cryptosteganography)** *(MIT License)*  
+  Created by **computationalcore**. Provides the high-level Python interface for encrypting messages/files with AES-256 and embedding them inside images.
+- **[`Stegano`](https://github.com/cedricbonhomme/Stegano)** *(GPL-3.0 License)* & **[`PyCryptodome`](https://github.com/Legrandin/pycryptodome)** *(BSD-2-Clause License)*  
+  Authored by **Cédric Bonhomme** (`Stegano`) and **Helder Eijs** (`PyCryptodome`), providing the underlying Least Significant Bit (LSB) steganography algorithms and AES cryptographic primitives used by `cryptosteganography`.
+- **[TrueNAS REST API v2.0](https://www.truenas.com/docs/api/)**  
+  Official REST API specification by **iXsystems** used by `truenas_api.py` for automated NAS management.
+- **[Flask](https://github.com/pallets/flask)** *(BSD-3-Clause License)* & **[`python-dotenv`](https://github.com/theskumar/python-dotenv)** *(BSD-3-Clause License)*  
+  Web framework by the **Pallets Projects** and environment configuration loader by **Saurabh Kumar**.
