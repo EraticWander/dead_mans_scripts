@@ -1,0 +1,4 @@
+cryptosteganography
+python-dotenv
+requests
+flask

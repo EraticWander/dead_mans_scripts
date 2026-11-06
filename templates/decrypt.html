@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Decode Page
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    <form id="decodeForm" method="post" enctype="multipart/form-data" action="">
+        <div class="row">
+            <!--Image section-->
+            <div class="input-group mb-3 col">
+                <input type="file" class="form-control w-90" name="file" id="file" accept="image/*" >
+            </div>
+            <!--Secret Passphrase section-->
+            <div class="input-group mb-3 col">
+                <span class="input-group-text">Secret Passphrase</span>
+                <input type="text" class="form-control w-90" name="passphrase" id="passphrase">
+            </div>
+        </div>
+        <input type="submit" class="btn btn-primary" id="submitBtn" value="DECODE">
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div class="row">
+            <div class="col">
+                <!--Message section-->
+                {% if message %}
+                <p style="color: green;" class="lead">Decrypted Message</p>
+                <p style="color: green;">{{ message.replace('\n', '<br>')|safe }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('decodeForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorMessage = document.getElementById('errorMessage');
+
+    form.addEventListener('submit', function(event) {
+        // Reset error message
+        errorMessage.style.display = 'none';
+        errorMessage.innerText = '';
+
+        // Validate fields
+        const fileInput = document.getElementById('file');
+        const passphraseInput = document.getElementById('passphrase');
+
+        if (!fileInput.files.length) {
+            showError('Please select a file.');
+            event.preventDefault();
+            return;
+        }
+
+        if (!passphraseInput.value.trim()) {
+            showError('Please enter a passphrase.');
+            event.preventDefault();
+            return;
+        }
+
+        // Disable the submit button and show loading message
+        submitBtn.disabled = true;
+        submitBtn.style.display = 'none';
+    });
+
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        errorMessage.innerText = message;
+    }
+</script>
+{% endblock %}

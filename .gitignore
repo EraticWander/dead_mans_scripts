@@ -1,0 +1,55 @@
+# Environments & Dependencies
+env/
+.env/
+venv/
+.venv/
+ENV/
+python_env/
+.conda/
+node_modules/
+
+# Python / JS / Build Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.desloppify/
+
+# Secrets & Credentials
+.env
+*.env
+configs/.env
+login.yaml
+access_token.yml
+**/access_token.yml
+secret.dat
+**/secret.dat
+learning-site-*.json
+
+# OS, Editor & Syncthing Artifacts
+.DS_Store
+._.DS_Store
+._*
+Thumbs.db
+*.swp
+*.sync-conflict-*
+
+# Large Archives, Models & Databases
+*.tar
+*.tar.gz
+*.zip
+*.pkg
+*.exe
+*.pbmm
+*.scorer
+*.pb
+*.joblib
+*.db
+*.sqlite3

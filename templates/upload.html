@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Encode Image
+{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+    </div>
+    <form id="encodeForm" method="post" enctype="multipart/form-data" action="">
+        <div class="row">
+            <!--Image section-->
+            <div class="input-group mb-3 col">
+                <input type="file" class="form-control w-90" name="file" id="file" accept="image/*" >
+            </div>
+            <!--Secret Passphrase section-->
+            <div class="input-group mb-3 col">
+                <span class="input-group-text">Secret Passphrase</span>
+                <input type="text" class="form-control w-90" name="passphrase" id="passphrase">
+            </div>
+        </div>
+        <div class="row">
+            <!--Message section-->
+            <div class="input-group mb-3 col">
+                <span class="input-group-text">Message to encode</span>
+                <textarea name="message" id="message" class="form-control w-90" aria-label="With textarea" rows="3" style="overflow:auto; resize:none;" oninput="adjustHeight(this)"></textarea>
+            </div>
+        </div>
+        <input type="submit" class="btn btn-primary" id="submitBtn" value="ENCODE">
+        <div id="loadingMessage" class="loading" style="display: none;">
+            <span>⏳ Encoding your file, please wait...</span>
+        </div>
+        </div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('encodeForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const errorMessage = document.getElementById('errorMessage');
+
+    form.addEventListener('submit', function(event) {
+        // Reset error message
+        errorMessage.style.display = 'none';
+        errorMessage.innerText = '';
+
+        // Validate fields
+        const fileInput = document.getElementById('file');
+        const passphraseInput = document.getElementById('passphrase');
+        const messageInput = document.getElementById('message');
+
+        if (!fileInput.files.length) {
+            showError('Please select a file.');
+            event.preventDefault();
+            return;
+        }
+
+        if (!passphraseInput.value.trim()) {
+            showError('Please enter a passphrase.');
+            event.preventDefault();
+            return;
+        }
+
+        if (!messageInput.value.trim()) {
+            showError('Please enter a message.');
+            event.preventDefault();
+            return;
+        }
+
+        // Disable the submit button and show loading message
+        submitBtn.disabled = true;
+        submitBtn.style.display = 'none';
+        loadingMessage.style.display = 'block';
+    });
+
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        errorMessage.innerText = message;
+    }
+
+    function adjustHeight(el) {
+        el.style.height = "auto"; // Reset the height to auto to calculate new height
+        el.style.height = (el.scrollHeight) + "px"; // Adjust height to fit content
+    }
+</script>
+{% endblock %}
