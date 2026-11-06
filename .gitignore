@@ -53,3 +53,6 @@ Thumbs.db
 *.joblib
 *.db
 *.sqlite3
+
+# Local Git & Docker Reference Guide
+git instructions.md
