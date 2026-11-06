@@ -1,88 +1,513 @@
 {% extends 'base.html' %}
 
-{% block title %}
-Encode Image
-{% endblock %}
+{% block title %}Dead Man's Stego Studio — Decode, Edit & Re-Encode{% endblock %}
 
 {% block content %}
-<div class="container mt-3">
+<!-- How-it-works banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4 px-3 py-2 rounded-3" style="background: rgba(30, 41, 59, 0.7); border: 1px solid #334155;">
+    <div class="d-flex flex-wrap align-items-center gap-3 small text-muted-custom">
+        <span><strong class="text-light">1.</strong> Select an image &amp; enter your passphrase</span>
+        <i class="bi bi-chevron-right opacity-50"></i>
+        <span><strong class="text-light">2.</strong> Click <strong class="text-info">Decode</strong> to load existing message (or type a new one)</span>
+        <i class="bi bi-chevron-right opacity-50"></i>
+        <span><strong class="text-light">3.</strong> Edit text &amp; click <strong class="text-primary">Re-Encode &amp; Download</strong></span>
     </div>
-    <form id="encodeForm" method="post" enctype="multipart/form-data" action="">
-        <div class="row">
-            <!--Image section-->
-            <div class="input-group mb-3 col">
-                <input type="file" class="form-control w-90" name="file" id="file" accept="image/*" >
+    <span class="badge bg-dark border border-secondary text-muted-custom fw-normal">
+        <i class="bi bi-trash3 me-1"></i>Zero server storage: files are auto-deleted immediately
+    </span>
+</div>
+
+<!-- Dynamic Alert Banner -->
+<div id="statusAlert" class="alert d-none d-flex align-items-center justify-content-between mb-4" role="alert">
+    <div class="d-flex align-items-center gap-2">
+        <i id="statusAlertIcon" class="bi"></i>
+        <span id="statusAlertText"></span>
+    </div>
+    <button type="button" class="btn-close btn-close-white ms-3" aria-label="Close" onclick="hideAlert()"></button>
+</div>
+
+<div class="row g-4 align-items-stretch">
+    <!-- STEP 1: Carrier Image & Passphrase -->
+    <div class="col-lg-5">
+        <div class="studio-card p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center mb-3">
+                    <span class="step-badge">1</span>
+                    <div>
+                        <h5 class="mb-0 fw-semibold">Image &amp; Passphrase</h5>
+                        <small class="text-muted-custom">Upload an encoded PNG to inspect/edit, or any image to start fresh</small>
+                    </div>
+                </div>
+
+                <!-- File Dropzone -->
+                <div id="dropzone" class="dropzone mb-3" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" name="file" accept="image/*" class="d-none">
+
+                    <div id="dropzoneEmpty">
+                        <i class="bi bi-cloud-arrow-up fs-1 text-primary d-block mb-2"></i>
+                        <div class="fw-medium">Click to choose an image or drag &amp; drop</div>
+                        <small class="text-muted-custom">PNG recommended for decoding • PNG, JPG, BMP supported for encoding</small>
+                    </div>
+
+                    <div id="dropzonePreview" class="d-none">
+                        <img id="imagePreview" src="" alt="Selected carrier preview" class="preview-thumb mb-2">
+                        <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                            <span id="fileNameBadge" class="badge bg-dark border border-secondary text-light text-truncate" style="max-width: 240px;"></span>
+                            <span id="fileSizeBadge" class="badge bg-secondary bg-opacity-25 text-muted-custom"></span>
+                        </div>
+                        <div class="mt-2">
+                            <span class="btn btn-sm btn-outline-light py-0 px-2" style="font-size: 0.78rem;">
+                                <i class="bi bi-folder2-open me-1"></i>Swap Image
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secret Passphrase -->
+                <div class="mb-3">
+                    <label for="passphraseInput" class="form-label small fw-semibold text-uppercase text-muted-custom mb-1">
+                        <i class="bi bi-key-fill me-1 text-primary"></i>Secret Passphrase
+                    </label>
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="passphraseInput"
+                            class="form-control"
+                            placeholder="Enter encryption / decryption passphrase..."
+                            autocomplete="off"
+                        >
+                        <button
+                            class="btn btn-outline-secondary text-muted-custom"
+                            type="button"
+                            id="togglePassphraseBtn"
+                            title="Show / Hide Passphrase"
+                        >
+                            <i class="bi bi-eye" id="togglePassphraseIcon"></i>
+                        </button>
+                    </div>
+                    <div class="form-text text-muted-custom small">
+                        Tip: After decoding, you can keep this passphrase or change it before re-encoding.
+                    </div>
+                </div>
             </div>
-            <!--Secret Passphrase section-->
-            <div class="input-group mb-3 col">
-                <span class="input-group-text">Secret Passphrase</span>
-                <input type="text" class="form-control w-90" name="passphrase" id="passphrase">
+
+            <!-- Decode Action Box -->
+            <div class="pt-3 border-top" style="border-color: #334155 !important;">
+                <button type="button" id="decodeBtn" class="btn btn-decode w-100 py-2">
+                    <span id="decodeSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                    <i id="decodeBtnIcon" class="bi bi-unlock-fill me-2"></i>
+                    <span id="decodeBtnLabel">Decode Message from Image</span>
+                </button>
+                <div class="text-center mt-2">
+                    <small class="text-muted-custom">
+                        Starting a brand-new image? Skip decoding and write your message in <strong>Step 2 →</strong>
+                    </small>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <!--Message section-->
-            <div class="input-group mb-3 col">
-                <span class="input-group-text">Message to encode</span>
-                <textarea name="message" id="message" class="form-control w-90" aria-label="With textarea" rows="3" style="overflow:auto; resize:none;" oninput="adjustHeight(this)"></textarea>
+    </div>
+
+    <!-- STEP 2: Secret Message Editor & Re-Encode -->
+    <div class="col-lg-7">
+        <div class="studio-card p-4 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <div class="d-flex align-items-center">
+                        <span class="step-badge">2</span>
+                        <div>
+                            <h5 class="mb-0 fw-semibold">Secret Message Editor</h5>
+                            <small class="text-muted-custom">Review decoded payload, make changes, or compose a new secret</small>
+                        </div>
+                    </div>
+
+                    <!-- Mode Status Pill -->
+                    <span id="editorStatePill" class="workflow-pill pill-idle">
+                        <i class="bi bi-pencil-square"></i>
+                        <span id="editorStateText">New Message</span>
+                    </span>
+                </div>
+
+                <!-- Editor Toolbar -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                    <div class="small text-muted-custom">
+                        <span id="charCount">0 characters</span> • <span id="lineCount">1 line</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" id="revertDecodedBtn" class="btn btn-sm btn-outline-warning d-none" title="Restore the originally decoded text">
+                            <i class="bi bi-arrow-uturn-left me-1"></i>Revert Edits
+                        </button>
+                        <button type="button" id="copyMessageBtn" class="btn btn-sm btn-outline-secondary text-light" title="Copy message to clipboard">
+                            <i class="bi bi-clipboard me-1"></i><span id="copyBtnText">Copy</span>
+                        </button>
+                        <button type="button" id="clearMessageBtn" class="btn btn-sm btn-outline-secondary text-muted-custom" title="Clear editor">
+                            <i class="bi bi-eraser me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message Textarea -->
+                <div class="mb-3">
+                    <textarea
+                        id="messageInput"
+                        class="form-control message-editor"
+                        placeholder="Decoded message will appear here automatically — or type a new message to hide inside the selected image..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Encode / Re-Encode Action Box -->
+            <div class="pt-3 border-top" style="border-color: #334155 !important;">
+                <button type="button" id="encodeBtn" class="btn btn-encode w-100 py-2 fs-6">
+                    <span id="encodeSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                    <i class="bi bi-lock-fill me-2" id="encodeBtnIcon"></i>
+                    <span id="encodeBtnLabel">Encode &amp; Download PNG</span>
+                </button>
+                <div class="d-flex justify-content-between align-items-center mt-2 small text-muted-custom">
+                    <span id="encodeHelperText">Embeds the message above into the selected image using AES-256 + LSB steganography.</span>
+                </div>
             </div>
         </div>
-        <input type="submit" class="btn btn-primary" id="submitBtn" value="ENCODE">
-        <div id="loadingMessage" class="loading" style="display: none;">
-            <span>⏳ Encoding your file, please wait...</span>
-        </div>
-        </div>
-        <div id="errorMessage" class="error" style="display: none;"></div>
-    </form>
+    </div>
 </div>
 
 <script>
-    const form = document.getElementById('encodeForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const loadingMessage = document.getElementById('loadingMessage');
-    const errorMessage = document.getElementById('errorMessage');
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const dropzoneEmpty = document.getElementById('dropzoneEmpty');
+    const dropzonePreview = document.getElementById('dropzonePreview');
+    const imagePreview = document.getElementById('imagePreview');
+    const fileNameBadge = document.getElementById('fileNameBadge');
+    const fileSizeBadge = document.getElementById('fileSizeBadge');
 
-    form.addEventListener('submit', function(event) {
-        // Reset error message
-        errorMessage.style.display = 'none';
-        errorMessage.innerText = '';
+    const passphraseInput = document.getElementById('passphraseInput');
+    const togglePassphraseBtn = document.getElementById('togglePassphraseBtn');
+    const togglePassphraseIcon = document.getElementById('togglePassphraseIcon');
 
-        // Validate fields
-        const fileInput = document.getElementById('file');
-        const passphraseInput = document.getElementById('passphrase');
-        const messageInput = document.getElementById('message');
+    const decodeBtn = document.getElementById('decodeBtn');
+    const decodeSpinner = document.getElementById('decodeSpinner');
+    const decodeBtnIcon = document.getElementById('decodeBtnIcon');
+    const decodeBtnLabel = document.getElementById('decodeBtnLabel');
 
-        if (!fileInput.files.length) {
-            showError('Please select a file.');
-            event.preventDefault();
-            return;
+    const messageInput = document.getElementById('messageInput');
+    const charCount = document.getElementById('charCount');
+    const lineCount = document.getElementById('lineCount');
+    const editorStatePill = document.getElementById('editorStatePill');
+
+    const revertDecodedBtn = document.getElementById('revertDecodedBtn');
+    const copyMessageBtn = document.getElementById('copyMessageBtn');
+    const copyBtnText = document.getElementById('copyBtnText');
+    const clearMessageBtn = document.getElementById('clearMessageBtn');
+
+    const encodeBtn = document.getElementById('encodeBtn');
+    const encodeSpinner = document.getElementById('encodeSpinner');
+    const encodeBtnIcon = document.getElementById('encodeBtnIcon');
+    const encodeBtnLabel = document.getElementById('encodeBtnLabel');
+    const encodeHelperText = document.getElementById('encodeHelperText');
+    const resetWorkspaceBtn = document.getElementById('resetWorkspaceBtn');
+
+    const statusAlert = document.getElementById('statusAlert');
+    const statusAlertIcon = document.getElementById('statusAlertIcon');
+    const statusAlertText = document.getElementById('statusAlertText');
+
+    // Track state for seamless Decode -> Edit -> Re-Encode workflow
+    let selectedFile = null;
+    let lastDecodedMessage = null;
+    let lastDecodedFilename = null;
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(2) + ' MB';
+    }
+
+    function showAlert(type, message) {
+        statusAlert.className = `alert alert-${type} d-flex align-items-center justify-content-between mb-4`;
+        const icons = {
+            success: 'bi-check-circle-fill',
+            danger: 'bi-exclamation-triangle-fill',
+            info: 'bi-info-circle-fill',
+            warning: 'bi-exclamation-circle-fill'
+        };
+        statusAlertIcon.className = `bi ${icons[type] || 'bi-info-circle-fill'} fs-5`;
+        statusAlertText.textContent = message;
+        statusAlert.classList.remove('d-none');
+    }
+
+    function hideAlert() {
+        statusAlert.classList.add('d-none');
+    }
+
+    function adjustMessageHeight() {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.max(260, messageInput.scrollHeight + 2) + 'px';
+    }
+
+    function updateEditorStatsAndState() {
+        adjustMessageHeight();
+        const text = messageInput.value;
+        const chars = text.length;
+        const lines = text ? text.split(/\r\n|\r|\n/).length : 1;
+        charCount.textContent = `${chars.toLocaleString()} character${chars === 1 ? '' : 's'}`;
+        lineCount.textContent = `${lines.toLocaleString()} line${lines === 1 ? '' : 's'}`;
+
+        if (lastDecodedMessage !== null) {
+            if (text === lastDecodedMessage) {
+                editorStatePill.className = 'workflow-pill pill-decoded';
+                editorStatePill.innerHTML = `<i class="bi bi-check2-circle"></i><span>Decoded from ${lastDecodedFilename || 'image'}</span>`;
+                revertDecodedBtn.classList.add('d-none');
+                encodeBtnLabel.textContent = 'Re-Encode & Download PNG';
+                encodeHelperText.textContent = 'Edit the decoded message above (or change passphrase/image), then click to re-encode.';
+            } else {
+                editorStatePill.className = 'workflow-pill pill-edited';
+                editorStatePill.innerHTML = `<i class="bi bi-pencil-fill"></i><span>Edited — Ready to Re-Encode</span>`;
+                revertDecodedBtn.classList.remove('d-none');
+                encodeBtnLabel.textContent = 'Re-Encode & Download Updated PNG';
+                encodeHelperText.textContent = 'Your changes will overwrite the hidden message inside a newly generated PNG.';
+            }
+        } else {
+            editorStatePill.className = 'workflow-pill pill-idle';
+            editorStatePill.innerHTML = `<i class="bi bi-pencil-square"></i><span>New Message</span>`;
+            revertDecodedBtn.classList.add('d-none');
+            encodeBtnLabel.textContent = 'Encode & Download PNG';
+            encodeHelperText.textContent = 'Embeds the message above into the selected image using AES-256 + LSB steganography.';
         }
+    }
 
-        if (!passphraseInput.value.trim()) {
-            showError('Please enter a passphrase.');
-            event.preventDefault();
-            return;
+    function handleFileSelection(file) {
+        if (!file) return;
+        selectedFile = file;
+        fileNameBadge.textContent = file.name;
+        fileSizeBadge.textContent = formatBytes(file.size);
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            imagePreview.src = e.target.result;
+            dropzoneEmpty.classList.add('d-none');
+            dropzonePreview.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+        hideAlert();
+    }
+
+    // File input & Drag-and-Drop listeners
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+            handleFileSelection(e.target.files[0]);
         }
-
-        if (!messageInput.value.trim()) {
-            showError('Please enter a message.');
-            event.preventDefault();
-            return;
-        }
-
-        // Disable the submit button and show loading message
-        submitBtn.disabled = true;
-        submitBtn.style.display = 'none';
-        loadingMessage.style.display = 'block';
     });
 
-    function showError(message) {
-        errorMessage.style.display = 'block';
-        errorMessage.innerText = message;
-    }
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+        });
+    });
 
-    function adjustHeight(el) {
-        el.style.height = "auto"; // Reset the height to auto to calculate new height
-        el.style.height = (el.scrollHeight) + "px"; // Adjust height to fit content
-    }
+    ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelection(e.dataTransfer.files[0]);
+        }
+    });
+
+    // Show/Hide Passphrase toggle
+    togglePassphraseBtn.addEventListener('click', () => {
+        const isPassword = passphraseInput.type === 'password';
+        passphraseInput.type = isPassword ? 'text' : 'password';
+        togglePassphraseIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+
+    // Editor live stats & auto-resize
+    messageInput.addEventListener('input', updateEditorStatsAndState);
+    window.addEventListener('resize', adjustMessageHeight);
+
+    // Revert to originally decoded message
+    revertDecodedBtn.addEventListener('click', () => {
+        if (lastDecodedMessage !== null) {
+            messageInput.value = lastDecodedMessage;
+            updateEditorStatsAndState();
+            showAlert('info', 'Reverted message back to the original decoded text.');
+        }
+    });
+
+    // Copy to clipboard
+    copyMessageBtn.addEventListener('click', async () => {
+        if (!messageInput.value) return;
+        try {
+            await navigator.clipboard.writeText(messageInput.value);
+            copyBtnText.textContent = 'Copied!';
+            setTimeout(() => { copyBtnText.textContent = 'Copy'; }, 1800);
+        } catch (err) {
+            messageInput.select();
+            document.execCommand('copy');
+        }
+    });
+
+    // Clear message editor
+    clearMessageBtn.addEventListener('click', () => {
+        messageInput.value = '';
+        updateEditorStatsAndState();
+        messageInput.focus();
+    });
+
+    // Reset entire workspace
+    resetWorkspaceBtn.addEventListener('click', () => {
+        selectedFile = null;
+        lastDecodedMessage = null;
+        lastDecodedFilename = null;
+        fileInput.value = '';
+        imagePreview.src = '';
+        dropzonePreview.classList.add('d-none');
+        dropzoneEmpty.classList.remove('d-none');
+        passphraseInput.value = '';
+        messageInput.value = '';
+        hideAlert();
+        updateEditorStatsAndState();
+    });
+
+    // STEP 1 ACTION: Decode Hidden Message from Image
+    decodeBtn.addEventListener('click', async () => {
+        hideAlert();
+
+        if (!selectedFile) {
+            showAlert('warning', 'Please select or drop an image in Step 1 first.');
+            return;
+        }
+        const passphrase = passphraseInput.value.trim();
+        if (!passphrase) {
+            showAlert('warning', 'Please enter the secret passphrase to decode this image.');
+            passphraseInput.focus();
+            return;
+        }
+
+        decodeBtn.disabled = true;
+        decodeSpinner.classList.remove('d-none');
+        decodeBtnIcon.classList.add('d-none');
+        decodeBtnLabel.textContent = 'Decoding Image...';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('passphrase', passphrase);
+
+            const response = await fetch('/api/decrypt', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.ok) {
+                showAlert('danger', data.error || 'Could not decode a message from this image.');
+                return;
+            }
+
+            lastDecodedMessage = data.message;
+            lastDecodedFilename = selectedFile.name;
+            messageInput.value = data.message;
+            updateEditorStatsAndState();
+            showAlert('success', `Message decoded from "${selectedFile.name}". You can now edit it below and click "Re-Encode & Download Updated PNG".`);
+            messageInput.focus();
+        } catch (err) {
+            showAlert('danger', 'Network or server error while decoding the image.');
+        } finally {
+            decodeBtn.disabled = false;
+            decodeSpinner.classList.add('d-none');
+            decodeBtnIcon.classList.remove('d-none');
+            decodeBtnLabel.textContent = 'Decode Message from Image';
+        }
+    });
+
+    // STEP 2 ACTION: Encode / Re-Encode & Download PNG
+    encodeBtn.addEventListener('click', async () => {
+        hideAlert();
+
+        if (!selectedFile) {
+            showAlert('warning', 'Please select a carrier image in Step 1 before encoding.');
+            return;
+        }
+        const passphrase = passphraseInput.value.trim();
+        if (!passphrase) {
+            showAlert('warning', 'Please enter a secret passphrase in Step 1.');
+            passphraseInput.focus();
+            return;
+        }
+        const message = messageInput.value;
+        if (!message.trim()) {
+            showAlert('warning', 'Please enter a secret message in Step 2 to encode.');
+            messageInput.focus();
+            return;
+        }
+
+        encodeBtn.disabled = true;
+        encodeSpinner.classList.remove('d-none');
+        encodeBtnIcon.classList.add('d-none');
+        encodeBtnLabel.textContent = 'Encoding your image, please wait...';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('passphrase', passphrase);
+            formData.append('message', message);
+
+            const response = await fetch('/api/encrypt', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                let errorMsg = 'Failed to encode the image.';
+                try {
+                    const errData = await response.json();
+                    if (errData.error) errorMsg = errData.error;
+                } catch (_) {}
+                showAlert('danger', errorMsg);
+                return;
+            }
+
+            // Extract filename from Content-Disposition header or build a clean fallback
+            let downloadName = 'image_encrypted.png';
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.includes('filename=')) {
+                const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)["']?/i);
+                if (match && match[1]) {
+                    downloadName = match[1];
+                }
+            } else if (selectedFile && selectedFile.name) {
+                const base = selectedFile.name.replace(/\.[^/.]+$/, '');
+                downloadName = base.endsWith('_encrypted') ? `${base}.png` : `${base}_encrypted.png`;
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = downloadName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(downloadUrl);
+
+            // Update baseline state to reflect that the current message is now encoded
+            lastDecodedMessage = message;
+            lastDecodedFilename = downloadName;
+            showAlert('success', `Encoded PNG downloaded as "${downloadName}". You can continue editing and re-encoding anytime.`);
+        } catch (err) {
+            showAlert('danger', 'Network or server error while encoding the image.');
+        } finally {
+            encodeBtn.disabled = false;
+            encodeSpinner.classList.add('d-none');
+            encodeBtnIcon.classList.remove('d-none');
+            updateEditorStatsAndState();
+        }
+    });
 </script>
 {% endblock %}

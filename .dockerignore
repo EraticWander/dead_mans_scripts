@@ -1,0 +1,28 @@
+# Git & VCS
+.git
+.gitignore
+
+# Virtual environments & caches
+env/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets & local docs
+.env
+*.env
+git instructions.md
+
+# OS & temporary files
+.DS_Store
+._.DS_Store
+static/uploads/*
+*.tar
+*.tar.gz
+*.zip
+
