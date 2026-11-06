@@ -238,8 +238,12 @@
     }
 
     function adjustMessageHeight() {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = Math.max(260, messageInput.scrollHeight + 2) + 'px';
+        const resize = () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.max(260, messageInput.scrollHeight + 4) + 'px';
+        };
+        resize();
+        requestAnimationFrame(resize);
     }
 
     function updateEditorStatsAndState() {

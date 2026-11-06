@@ -1,6 +1,7 @@
 # Git & VCS
 .git
 .gitignore
+.github/
 
 # Virtual environments & caches
 env/
